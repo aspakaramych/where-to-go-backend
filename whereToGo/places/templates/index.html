@@ -37,37 +37,6 @@
       width: 100px;
     }
   </style>
-  <script id="places-geojson" type="application/json">
-    {
-      "type": "FeatureCollection",
-      "features": [
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [37.62, 55.793676]
-          },
-          "properties": {
-            "title": "«Легенды Москвы",
-            "placeId": "moscow_legends",
-            "detailsUrl": "./static/places/moscow_legends.json"
-          }
-        },
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "Point",
-            "coordinates": [37.64, 55.753676]
-          },
-          "properties": {
-            "title": "Крыши24.рф",
-            "placeId": "roofs24",
-            "detailsUrl": ".static/places/roofs24.json"
-          }
-        }
-      ]
-    }
-  </script>
 
   <script id="app-template" type="text/template">
     <div v-bind:class="{'sidebar-content': 1, 'bg-white': selectedPlace, 'bg-secondary': !selectedPlace}">
@@ -176,54 +145,54 @@
       }
     }).addTo(map);
 
-    function loadJSON(elementId){
-      let element = document.getElementById(elementId);
+    async function loadJSON() {
+      try {
+        let response = await fetch('/places/')
+        if (!response.ok){
+          log.error("Failed to fetch")
+          return
+        }
 
-      if (!element){
-        log.error(`Not found element with id '${elementId}'.`)
-        return null;
+        let places = await response.json()
+        L.geoJSON(places, {
+            pointToLayer: function(geoJsonPoint, latlng) {
+                if (geoJsonPoint.geometry.type != "Point"){
+                    return
+                }
+
+                let color = geoJsonPoint.properties.color || 'red';
+
+                var pulsingIcon = L.icon.pulse({
+                    iconSize: [12, 12],
+                    color: color,
+                    fillColor: color,
+                    heartbeat: 2.5,
+                });
+
+                let marker = L.marker(latlng, {
+                    icon: pulsingIcon,
+                    riseOnHover: true,
+                });
+
+                marker.bindTooltip(geoJsonPoint.properties.title);
+                marker.bindPopup(function (layer) {
+                    return geoJsonPoint.properties.title;
+                })
+
+                marker.on('click', function(event){
+                    log.debug('Feature selected', geoJsonPoint);
+                    sidebar.show();
+                    loadPlaceInfo(geoJsonPoint.properties.placeId, geoJsonPoint.properties.detailsUrl);
+                });
+                return marker;
+            }
+        }).addTo(map);
+      } catch (e){
+        log.error(e)
       }
-
-      return JSON.parse(element.textContent);
     }
 
-    let places = loadJSON('places-geojson');
-    log.debug('Load GeoJSON for places', places);
-
-
-    L.geoJSON(places, {
-        pointToLayer: function(geoJsonPoint, latlng) {
-          if (geoJsonPoint.geometry.type != "Point"){
-            return
-          }
-
-          let color = geoJsonPoint.properties.color || 'red';
-
-          var pulsingIcon = L.icon.pulse({
-            iconSize: [12, 12],
-            color: color,
-            fillColor: color,
-            heartbeat: 2.5,
-          });
-
-          let marker = L.marker(latlng, {
-            icon: pulsingIcon,
-            riseOnHover: true,
-          });
-
-          marker.bindTooltip(geoJsonPoint.properties.title);
-          marker.bindPopup(function (layer) {
-            return geoJsonPoint.properties.title;
-          })
-
-          marker.on('click', function(event){
-            log.debug('Feature selected', geoJsonPoint);
-            sidebar.show();
-            loadPlaceInfo(geoJsonPoint.properties.placeId, geoJsonPoint.properties.detailsUrl);
-          });
-          return marker;
-        }
-    }).addTo(map);
+    loadJSON()
 
     var sidebarApp = new Vue({
       el: '#sidebar-app',
