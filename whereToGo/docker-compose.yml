@@ -4,10 +4,8 @@ services:
   web:
     build: .
     container_name: where_to_go_app
-    # Считываем переменные окружения
     env_file:
       - .env
-    # Публикуем порт 8000 контейнера на порт 8000 вашей локальной машины
     ports:
       - "13679:8000"
     restart: "no"
