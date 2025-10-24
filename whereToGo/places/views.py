@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
-from placesService.models import Place
+from placesService.models import Place, Image
 
 
 def show_map(request):
@@ -31,10 +31,22 @@ def all_places_geojson(request):
         "features": geojson_features
     }
 
-    return JsonResponse(geojson, safe=False)
+    return JsonResponse(geojson, safe=False, json_dumps_params={'ensure_ascii': False})
 
 
 def place_details_endpoint(request, place_id):
     place = get_object_or_404(Place, pk=place_id)
 
-    return JsonResponse({"title": place.title}, safe=False)
+    image_urls = [image.image.url for image in place.images.all().order_by('position')]
+
+    place_json = {
+        "title": place.title.strip(),
+        "imgs": image_urls,
+        "description_short": place.description_short,
+        "description_long": place.description_long,
+        "coordinates": {
+            "lng": place.lon,
+            "lat": place.lat
+        }
+    }
+    return JsonResponse(place_json, json_dumps_params={'ensure_ascii': False})
