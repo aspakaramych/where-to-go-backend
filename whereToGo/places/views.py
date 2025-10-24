@@ -37,7 +37,7 @@ def all_places_geojson(request):
 def place_details_endpoint(request, place_id):
     place = get_object_or_404(Place, pk=place_id)
 
-    image_urls = [image.image.url for image in place.images.all().order_by('position')]
+    image_urls = [image.image.url for image in place.images.all().order_by('sort_order')]
 
     place_json = {
         "title": place.title.strip(),

@@ -1,2 +1,3 @@
 /venv
 /whereToGo/.env
+/whereToGo/db.sqlite3
