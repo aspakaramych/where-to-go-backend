@@ -1,10 +1,10 @@
 from django.db import models
-
+import tinymce.models as tinymce_models
 
 class Place(models.Model):
     title = models.CharField('Название', max_length=200, unique=True)
     description_short = models.TextField('Короткое описание')
-    description_long = models.TextField('Полное описание')
+    description_long = tinymce_models.HTMLField('Полное описание')
 
     lat = models.FloatField('Широта')
     lon = models.FloatField('Долгота')
@@ -24,12 +24,14 @@ class Image(models.Model):
         related_name='images',
         verbose_name='Место'
     )
-    image = models.ImageField('Картинка')
+    image = models.ImageField('Картинка', upload_to='place_images/')
 
-
-    position = models.PositiveIntegerField('Позиция', default=0)
+    sort_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
 
     class Meta:
+        ordering = ['sort_order']
         verbose_name = 'Фотография'
         verbose_name_plural = 'Фотографии'
-        ordering = ['position']
+
+    def __str__(self):
+        return f"Фотография {self.id} для {self.place.title}"
